@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Analytics</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+        
+    </script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f6f8fb;
+        }
+
+        /* ===== TOP HEADER (SAME AS EMAIL PAGE) ===== */
+        .header {
+            background: #0b2c4d;
+            color: white;
+            padding: 2px 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .header p {
+            margin-top: 6px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* ===== PAGE CONTAINER ===== */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* ===== KPI CARDS ===== */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        .kpi-card h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .kpi-card p {
+            margin-top: 10px;
+            font-size: 34px;
+            font-weight: bold;
+            color: #0b2c4d;
+        }
+
+        /* ===== CHART GRID ===== */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        .chart-card h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #0b2c4d;
+        }
+
+        canvas {
+            max-height: 260px;
+        }
+
+        /* ===== BACK LINK ===== */
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            font-weight: 600;
+            color: #0b2c4d;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media(max-width: 900px) {
+            .kpi-grid,
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+    <h1>System Analytics</h1>
+    <p>Security insights derived from email and website threat analysis</p>
+</div>
+
+<!-- ===== CONTENT ===== -->
+<div class="container">
+
+    <!-- KPI SUMMARY -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <h3>Total Emails Checked</h3>
+            <p>{{ total_emails }}</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>Total Websites Checked</h3>
+            <p>{{ total_websites }}</p>
+        </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="chart-grid">
+
+        <div class="chart-card">
+            <h3>Email Spam vs Legit</h3>
+            <canvas id="emailChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Website Risk Distribution</h3>
+            <canvas id="websiteChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Overall Threat Distribution</h3>
+            <canvas id="overallChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Threat Trend Over Time</h3>
+            <canvas id="trendChart"></canvas>
+        </div>
+
+    </div>
+
+    <a class="back-link" href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+</div>
+
+<!-- ===== DATA FROM FLASK ===== -->
+<script id="analytics-data" type="application/json">
+{
+  "spamEmails": {{ spam_emails }},
+  "legitEmails": {{ legit_emails }},
+  "safeWebsites": {{ safe_websites }},
+  "mediumWebsites": {{ medium_websites }},
+  "unsafeWebsites": {{ unsafe_websites }},
+  "dates": {{ dates | tojson }},
+  "spamCounts": {{ spam_counts | tojson }},
+  "unsafeCounts": {{ unsafe_counts | tojson }}
+}
+</script>
+
+<script>
+const data = JSON.parse(
+    document.getElementById("analytics-data").textContent
+);
+
+// Email Spam vs Legit
+new Chart(document.getElementById("emailChart"), {
+    type: "pie",
+    data: {
+        labels: ["Spam", "Legit"],
+        datasets: [{
+            label: "Email Status",
+            data: [data.spamEmails, data.legitEmails],
+            backgroundColor: ["#ff4d4d", "#4CAF50"]
+        }]
+    },
+    options: {
+        plugins: {
+            legend: {
+                display: true,
+                position: "bottom"
+            }
+        }
+    }
+});
+
+
+// Website Risk Distribution
+new Chart(document.getElementById("websiteChart"), {
+    type: "bar",
+    data: {
+        labels: ["Safe", "Medium", "Unsafe"],
+        datasets: [{
+            label: "Website Risk",
+            data: [data.safeWebsites, data.mediumWebsites, data.unsafeWebsites],
+            backgroundColor: ["#4CAF50", "#FFC107", "#ff4d4d"]
+        }]
+    },
+    options: {
+        plugins: {
+            legend: {
+                display: false,
+                position: "bottom"
+            }
+        }
+    }
+});
+
+
+// Overall Threat Distribution
+new Chart(document.getElementById("overallChart"), {
+    type: "pie",
+    data: {
+        labels: ["Email Threats", "Website Threats"],
+        datasets: [{
+            label: "Threat Type",
+            data: [data.spamEmails, data.unsafeWebsites],
+            backgroundColor: ["#ff9800", "#9c27b0"]
+        }]
+    },
+    options: {
+        plugins: {
+            legend: {
+                display: true,
+                position: "bottom"
+            }
+        }
+    }
+});
+
+
+// Threat Trend Over Time
+new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+        labels: data.dates,
+        datasets: [
+            {
+                label: "Spam Emails",
+                data: data.spamCounts,
+                borderColor: "#ff4d4d",
+                tension: 0.4
+            },
+            {
+                label: "Unsafe Websites",
+                data: data.unsafeCounts,
+                borderColor: "#9c27b0",
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        plugins: {
+            legend: {
+                display: true,
+                position: "bottom"
+            }
+        }
+    }
+});
+</script>
+</body>
+</html>
